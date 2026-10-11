@@ -41,6 +41,10 @@ object LyricsTranslationHelper {
 
     private var translationJob: Job? = null
     private val memoryCache = mutableMapOf<String, List<String>>()
+    private val manuallyClearedSongIds = mutableSetOf<String>()
+
+    fun isSongCleared(songId: String): Boolean =
+        songId.isNotBlank() && manuallyClearedSongIds.contains(songId)
 
     fun getCacheKey(lyricsText: String, lang: String): String =
         "${lyricsText.hashCode()}_$lang"
@@ -54,6 +58,7 @@ object LyricsTranslationHelper {
 
     fun hasCachedTranslation(context: Context, songId: String, lang: String? = null): Boolean {
         if (songId.isBlank()) return false
+        if (isSongCleared(songId)) return false
         if (!lang.isNullOrBlank()) {
             val file = getCacheFile(context, songId, lang)
             if (file.exists() && file.length() > 2) return true
@@ -115,6 +120,9 @@ object LyricsTranslationHelper {
 
     fun clearTranslations(lyrics: List<LyricsEntry>? = null, context: Context? = null, songId: String? = null) {
         cancelTranslation()
+        if (!songId.isNullOrBlank()) {
+            manuallyClearedSongIds.add(songId)
+        }
         val targetLyrics = lyrics ?: activeLyricsList
         targetLyrics?.forEach { it.translatedTextFlow.value = null }
         _activeSongId.value = null
@@ -128,11 +136,7 @@ object LyricsTranslationHelper {
                 dir.listFiles { _, name -> name.startsWith("${safeSongId}_") }?.forEach { it.delete() }
             }
         }
-        if (!songId.isNullOrBlank()) {
-            memoryCache.keys.filter { it.startsWith("${songId}_") }.forEach { memoryCache.remove(it) }
-        } else {
-            memoryCache.clear()
-        }
+        memoryCache.clear()
         _translationVersion.value += 1
     }
 
@@ -143,6 +147,7 @@ object LyricsTranslationHelper {
         preferredLanguageCode: String? = null
     ): Boolean {
         if (lyrics.isEmpty() || songId.isBlank()) return false
+        if (isSongCleared(songId)) return false
 
         // 1. Try preferred language code
         if (!preferredLanguageCode.isNullOrBlank()) {
@@ -192,6 +197,7 @@ object LyricsTranslationHelper {
         songId: String,
         targetLanguageCode: String
     ): Boolean {
+        if (songId.isNotBlank() && isSongCleared(songId)) return false
         registerLyrics(lyrics)
         _currentLanguageCode.value = targetLanguageCode
         val nonEmptyEntries = lyrics.mapIndexedNotNull { index, entry ->
@@ -258,6 +264,9 @@ object LyricsTranslationHelper {
         scope: CoroutineScope
     ) {
         cancelTranslation()
+        if (songId.isNotBlank()) {
+            manuallyClearedSongIds.remove(songId)
+        }
         _currentLanguageCode.value = targetLanguageCode
         _status.value = TranslationStatus.Translating(listOf("Initializing AI translation engine..."))
 

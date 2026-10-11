@@ -294,7 +294,7 @@ fun LyricsV2(
         )
 
         // Auto-translate if enabled and not already translated or translating
-        if (!hasLoaded && autoTranslate && !LyricsTranslationHelper.isTranslating()) {
+        if (!hasLoaded && autoTranslate && !LyricsTranslationHelper.isTranslating() && !LyricsTranslationHelper.isSongCleared(songId)) {
             val key = if (aiProvider == "DeepL") deeplApiKey else openRouterApiKey
             if (key.isNotBlank()) {
                 LyricsTranslationHelper.translateLyrics(
