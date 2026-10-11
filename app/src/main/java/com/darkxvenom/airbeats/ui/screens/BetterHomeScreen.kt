@@ -530,29 +530,6 @@ fun BetterHomeScreen(
             }
         }
 
-        // 2. Right-edge pill-shaped navigation rail/bar matching the design in the mock
-        BetterRightEdgeNavBar(
-            modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .padding(end = 12.dp)
-                .zIndex(10f),
-            onHomeClick = {
-                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                scope.launch { listState.animateScrollToItem(0) }
-            },
-            onSearchClick = {
-                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                onSearchClick()
-            },
-            onExploreClick = {
-                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                navController.navigate(Screens.Explore.route)
-            },
-            onLibraryClick = {
-                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                navController.navigate(Screens.Library.route)
-            }
-        )
 
         TopFadeBlur(
             hazeState = hazeState,
@@ -1181,85 +1158,4 @@ private fun BetterSongItemRow(
     }
 }
 
-/**
- * Vertical pill-shaped navigation rail/bar floating on the right edge of the screen,
- * exactly matching the design from the uploaded mockup image.
- */
-@Composable
-private fun BetterRightEdgeNavBar(
-    modifier: Modifier = Modifier,
-    onHomeClick: () -> Unit,
-    onSearchClick: () -> Unit,
-    onExploreClick: () -> Unit,
-    onLibraryClick: () -> Unit,
-) {
-    Surface(
-        shape = RoundedCornerShape(32.dp),
-        color = Color(0xFF16161A).copy(alpha = 0.94f),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)),
-        shadowElevation = 8.dp,
-        modifier = modifier
-    ) {
-        Column(
-            modifier = Modifier.padding(vertical = 12.dp, horizontal = 7.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            // Home (Selected with lime badge background)
-            Box(
-                modifier = Modifier
-                    .size(38.dp)
-                    .clip(CircleShape)
-                    .background(BetterLimeAccent)
-                    .clickable { onHomeClick() },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.home_filled),
-                    contentDescription = "Home",
-                    tint = Color.Black,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
 
-            // Search
-            IconButton(
-                onClick = onSearchClick,
-                modifier = Modifier.size(38.dp)
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.search),
-                    contentDescription = "Search",
-                    tint = Color.White.copy(alpha = 0.75f),
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-
-            // Explore
-            IconButton(
-                onClick = onExploreClick,
-                modifier = Modifier.size(38.dp)
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.explore_filled),
-                    contentDescription = "Explore",
-                    tint = Color.White.copy(alpha = 0.75f),
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-
-            // Library
-            IconButton(
-                onClick = onLibraryClick,
-                modifier = Modifier.size(38.dp)
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.library_music_filled),
-                    contentDescription = "Library",
-                    tint = Color.White.copy(alpha = 0.75f),
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-        }
-    }
-}

@@ -1208,7 +1208,7 @@ fun BottomSheetPlayer(
                 com.darkxvenom.airbeats.constants.NavBarStyleKey,
                 defaultValue = com.darkxvenom.airbeats.constants.NavBarStyle.NEW_CLASSIC
             )
-            if (navBarStyle == com.darkxvenom.airbeats.constants.NavBarStyle.NEW_CLASSIC) {
+            if (navBarStyle == com.darkxvenom.airbeats.constants.NavBarStyle.NEW_CLASSIC || navBarStyle == com.darkxvenom.airbeats.constants.NavBarStyle.BETTER) {
                 NewClassicMiniPlayer(
                     position = position,
                     duration = duration,
