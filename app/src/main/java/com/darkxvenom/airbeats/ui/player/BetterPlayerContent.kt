@@ -605,7 +605,7 @@ fun BetterPlayerContent(
             )
         }
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         // ========== CONTROL CLUSTER (Asymmetric Bento) ==========
         Column(
