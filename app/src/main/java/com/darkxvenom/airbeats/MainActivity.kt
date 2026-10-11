@@ -398,11 +398,9 @@ class MainActivity : FragmentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        if (dataStore.get(
-                StopMusicOnTaskClearKey,
-                false
-            ) && playerConnection?.isPlaying?.value == true && isFinishing
-        ) {
+        val stopOnTaskClear = (com.darkxvenom.airbeats.utils.dataStoreCache[StopMusicOnTaskClearKey.name] as? Boolean)
+            ?: dataStore.get(StopMusicOnTaskClearKey, false)
+        if (stopOnTaskClear && playerConnection?.isPlaying?.value == true && isFinishing) {
             stopService(Intent(this, MusicService::class.java))
         }
         playerConnection = null
@@ -856,7 +854,9 @@ class MainActivity : FragmentActivity() {
                                 if (it.isNotEmpty()) {
                                     onActiveChange(false)
                                     navController.navigate("search/${URLEncoder.encode(it, "UTF-8")}")
-                                    if (!pauseSearchHistory && it.isNotBlank()) {
+                                    val isPaused = (com.darkxvenom.airbeats.utils.dataStoreCache[PauseSearchHistoryKey.name] as? Boolean)
+                                        ?: pauseSearchHistory
+                                    if (!isPaused && it.isNotBlank()) {
                                         database.query {
                                             insert(SearchHistory(query = it.trim()))
                                         }
@@ -1334,7 +1334,9 @@ class MainActivity : FragmentActivity() {
                                                                 try {
                                                                     val encodedQuery = URLEncoder.encode(searchQuery, "UTF-8")
                                                                     navController.navigate("search/$encodedQuery")
-                                                                    if (!pauseSearchHistory && searchQuery.isNotBlank()) {
+                                                                    val isPaused = (com.darkxvenom.airbeats.utils.dataStoreCache[PauseSearchHistoryKey.name] as? Boolean)
+                                                                        ?: pauseSearchHistory
+                                                                    if (!isPaused && searchQuery.isNotBlank()) {
                                                                         database.query {
                                                                             insert(SearchHistory(query = searchQuery.trim()))
                                                                         }

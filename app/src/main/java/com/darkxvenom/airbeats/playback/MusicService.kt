@@ -4427,7 +4427,23 @@ class MusicService :
 
     override fun onTaskRemoved(rootIntent: Intent?) {
         super.onTaskRemoved(rootIntent)
-        if (dataStore.get(StopMusicOnTaskClearKey, false) || player.currentMediaItem == null) {
+        val stopOnTaskClear = (com.darkxvenom.airbeats.utils.dataStoreCache[StopMusicOnTaskClearKey.name] as? Boolean)
+            ?: dataStore.get(StopMusicOnTaskClearKey, false)
+
+        if (stopOnTaskClear || player.currentMediaItem == null) {
+            disconnectCast()
+            currentQueueLoadId++
+            queueLoadingJob?.cancel()
+            queueLoadingJob = null
+            songLoadingRetryJob?.cancel()
+            offlineBufferingJob?.cancel()
+            offlineBufferingJob = null
+            waitingForNetworkConnection.value = false
+            clearAutomix()
+            player.pause()
+            player.stop()
+            pauseAllPlayersAndStopSelf()
+            stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
         }
     }

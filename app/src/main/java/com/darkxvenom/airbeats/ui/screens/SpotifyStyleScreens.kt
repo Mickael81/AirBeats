@@ -510,7 +510,9 @@ fun SpotifySearchScreen(
                 onSearch = { q ->
                     val encoded = URLEncoder.encode(q, "UTF-8")
                     navController.navigate("search/$encoded")
-                    if (!pauseSearchHistory && q.isNotBlank()) {
+                    val isPaused = (com.darkxvenom.airbeats.utils.dataStoreCache[com.darkxvenom.airbeats.constants.PauseSearchHistoryKey.name] as? Boolean)
+                        ?: pauseSearchHistory
+                    if (!isPaused && q.isNotBlank()) {
                         database.query {
                             insert(com.darkxvenom.airbeats.db.entities.SearchHistory(query = q.trim()))
                         }
@@ -560,7 +562,9 @@ fun SpotifySearchScreen(
                         val encoded = URLEncoder.encode(suggestion, "UTF-8")
                         navController.navigate("search/$encoded")
                         keyboardController?.hide()
-                        if (!pauseSearchHistory && suggestion.isNotBlank()) {
+                        val isPaused = (com.darkxvenom.airbeats.utils.dataStoreCache[com.darkxvenom.airbeats.constants.PauseSearchHistoryKey.name] as? Boolean)
+                            ?: pauseSearchHistory
+                        if (!isPaused && suggestion.isNotBlank()) {
                             database.query {
                                 insert(com.darkxvenom.airbeats.db.entities.SearchHistory(query = suggestion.trim()))
                             }

@@ -967,7 +967,9 @@ fun AppleSearchScreen(
                         val encoded = URLEncoder.encode(query, "UTF-8")
                         navController.navigate("search/$encoded")
                         keyboardController?.hide()
-                        if (!pauseSearchHistory && query.isNotBlank()) {
+                        val isPaused = (com.darkxvenom.airbeats.utils.dataStoreCache[com.darkxvenom.airbeats.constants.PauseSearchHistoryKey.name] as? Boolean)
+                            ?: pauseSearchHistory
+                        if (!isPaused && query.isNotBlank()) {
                             database.query {
                                 insert(com.darkxvenom.airbeats.db.entities.SearchHistory(query = query.trim()))
                             }
@@ -1023,7 +1025,9 @@ fun AppleSearchScreen(
                         val encoded = URLEncoder.encode(suggestion, "UTF-8")
                         navController.navigate("search/$encoded")
                         keyboardController?.hide()
-                        if (!pauseSearchHistory && suggestion.isNotBlank()) {
+                        val isPaused = (com.darkxvenom.airbeats.utils.dataStoreCache[com.darkxvenom.airbeats.constants.PauseSearchHistoryKey.name] as? Boolean)
+                            ?: pauseSearchHistory
+                        if (!isPaused && suggestion.isNotBlank()) {
                             database.query {
                                 insert(com.darkxvenom.airbeats.db.entities.SearchHistory(query = suggestion.trim()))
                             }

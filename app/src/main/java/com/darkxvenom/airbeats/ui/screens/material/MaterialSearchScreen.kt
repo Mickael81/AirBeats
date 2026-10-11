@@ -127,7 +127,9 @@ fun MaterialSearchScreen(
         if (text.isNotBlank()) {
             keyboardController?.hide()
             navController.navigate("search/${URLEncoder.encode(text.trim(), "UTF-8")}")
-            if (!pauseSearchHistory) {
+            val isPaused = (com.darkxvenom.airbeats.utils.dataStoreCache[PauseSearchHistoryKey.name] as? Boolean)
+                ?: pauseSearchHistory
+            if (!isPaused) {
                 database.query {
                     insert(SearchHistory(query = text.trim()))
                 }

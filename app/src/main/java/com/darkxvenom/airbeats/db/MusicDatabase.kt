@@ -52,20 +52,15 @@ class MusicDatabase(
         get() = delegate.openHelper
 
     override fun insert(searchHistory: SearchHistory) {
-        val isPaused = try {
-            val cached = com.darkxvenom.airbeats.utils.dataStoreCache[PauseSearchHistoryKey.name]
-            if (cached is Boolean) {
-                cached
-            } else {
+        val isPaused = (com.darkxvenom.airbeats.utils.dataStoreCache[PauseSearchHistoryKey.name] as? Boolean)
+            ?: runCatching {
                 context?.let { ctx ->
                     kotlinx.coroutines.runBlocking {
                         ctx.dataStore.data.first()[PauseSearchHistoryKey]
                     }
-                } ?: false
-            }
-        } catch (_: Exception) {
-            false
-        }
+                }
+            }.getOrNull()
+            ?: false
         if (isPaused) {
             return
         }
