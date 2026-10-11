@@ -52,12 +52,16 @@ import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.core.net.toUri
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.darkxvenom.airbeats.LocalDatabase
 import com.darkxvenom.airbeats.LocalPlayerAwareWindowInsets
 import com.darkxvenom.airbeats.LocalPlayerConnection
 import com.darkxvenom.airbeats.R
+import com.darkxvenom.airbeats.ui.component.AvatarPreferenceManager
+import com.darkxvenom.airbeats.ui.component.AvatarSelection
+import com.darkxvenom.airbeats.ui.component.LocalUserName
 import com.darkxvenom.airbeats.constants.AccountNameKey
 import com.darkxvenom.airbeats.constants.InnerTubeCookieKey
 import com.darkxvenom.airbeats.db.entities.Album
@@ -128,6 +132,18 @@ fun BetterHomeScreen(
     val pullRefreshState = rememberPullToRefreshState()
 
     val accountName by rememberPreference(AccountNameKey, "")
+    val userName = LocalUserName.current
+    val displayName = if (userName.isNotBlank()) {
+        userName
+    } else if (accountName.isNotBlank()) {
+        accountName
+    } else {
+        "Friend"
+    }
+
+    val avatarManager = remember { AvatarPreferenceManager(context) }
+    val currentAvatarSelection by avatarManager.getAvatarSelection.collectAsState(initial = AvatarSelection.Default)
+
     val accountImageUrl by viewModel.accountImageUrl.collectAsState()
     val innerTubeCookie by rememberPreference(InnerTubeCookieKey, "")
     val isLoggedIn = remember(innerTubeCookie) {
@@ -242,10 +258,11 @@ fun BetterHomeScreen(
             item(key = "better_hero_section") {
                 BetterHeroSection(
                     heroData = effectiveHero,
-                    accountName = accountName,
+                    displayName = displayName,
+                    currentAvatarSelection = currentAvatarSelection,
                     userAvatarUrl = userAvatarUrl,
                     greeting = greeting,
-                    onProfileClick = { navController.navigate("settings") },
+                    onProfileClick = { navController.navigate("settings/account") },
                     onNewReleaseClick = { navController.navigate("new_release") },
                     onDeveloperNewsClick = { navController.navigate("settings/developer_news") },
                     onSettingsClick = { navController.navigate("settings") },
@@ -558,7 +575,8 @@ fun BetterHomeScreen(
 @Composable
 private fun BetterHeroSection(
     heroData: HeroPlaylistData,
-    accountName: String,
+    displayName: String,
+    currentAvatarSelection: AvatarSelection,
     userAvatarUrl: String?,
     greeting: String,
     onProfileClick: () -> Unit,
@@ -658,31 +676,58 @@ private fun BetterHeroSection(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.clickable { onProfileClick() }
                 ) {
-                    if (!userAvatarUrl.isNullOrBlank()) {
-                        AsyncImage(
-                            model = userAvatarUrl,
-                            contentDescription = "Profile",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .size(42.dp)
-                                .clip(CircleShape)
-                                .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.25f)), CircleShape)
-                        )
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .size(42.dp)
-                                .clip(CircleShape)
-                                .background(Color.White.copy(alpha = 0.12f))
-                                .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.25f)), CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.person),
-                                contentDescription = "Profile",
-                                tint = Color.White,
-                                modifier = Modifier.size(22.dp)
-                            )
+                    Box(
+                        modifier = Modifier
+                            .size(42.dp)
+                            .clip(CircleShape)
+                            .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.25f)), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        when (currentAvatarSelection) {
+                            is AvatarSelection.Custom -> {
+                                AsyncImage(
+                                    model = (currentAvatarSelection as AvatarSelection.Custom).uri.toUri(),
+                                    contentDescription = "Profile",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                            is AvatarSelection.DiceBear -> {
+                                AsyncImage(
+                                    model = (currentAvatarSelection as AvatarSelection.DiceBear).url,
+                                    contentDescription = "Profile",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                            else -> {
+                                if (!userAvatarUrl.isNullOrBlank()) {
+                                    AsyncImage(
+                                        model = userAvatarUrl,
+                                        contentDescription = "Profile",
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                } else {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(
+                                                Brush.linearGradient(
+                                                    listOf(Color(0xFF8E2DE2), Color(0xFF4A00E0))
+                                                )
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(R.drawable.person),
+                                            contentDescription = "Profile",
+                                            tint = Color.White,
+                                            modifier = Modifier.size(22.dp)
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
 
@@ -690,9 +735,9 @@ private fun BetterHeroSection(
 
                     Column {
                         Text(
-                            text = if (accountName.isNotBlank()) "Hi $accountName" else "Hi You",
+                            text = "Hi, $displayName",
                             color = Color.White,
-                            fontSize = 15.sp,
+                            fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
