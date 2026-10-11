@@ -570,6 +570,7 @@ fun AppearanceSettings(
                             valueText = {
                                 when (it) {
                                     HomeScreenStyle.NEW_CLASSIC -> "New Classic"
+                                    HomeScreenStyle.BETTER -> "Better"
                                     HomeScreenStyle.CLASSIC -> "Classic"
                                     HomeScreenStyle.PLAYFUL -> "Playful"
                                     HomeScreenStyle.SPOTIFY -> "Spotify"
@@ -578,7 +579,7 @@ fun AppearanceSettings(
                                 }
                             },
                         )},
-                        *(if (homeScreenStyle != HomeScreenStyle.NEW_CLASSIC) arrayOf<@Composable () -> Unit>({
+                        *(if (homeScreenStyle != HomeScreenStyle.NEW_CLASSIC && homeScreenStyle != HomeScreenStyle.BETTER) arrayOf<@Composable () -> Unit>({
                             PreferenceEntry(
                                 title = { Text("Home Sections") },
                                 description = "Customize visible sections on the Home screen",

@@ -1477,10 +1477,13 @@ class MainActivity : FragmentActivity() {
                                             val isTabletLandscape = configuration.screenWidthDp >= 600 &&
                                                     configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
+                                            val isBetterHome = (currentRoute == Screens.Home.route) && homeScreenStyle == HomeScreenStyle.BETTER
+
                                             val shouldShowBottomNav =
                                                 shouldShowNavigationBar &&
                                                         playerBottomSheetState.progress < 0.95f &&
-                                                        !isPlayfulHome
+                                                        !isPlayfulHome &&
+                                                        !isBetterHome
 
                                             if (shouldShowBottomNav) {
 

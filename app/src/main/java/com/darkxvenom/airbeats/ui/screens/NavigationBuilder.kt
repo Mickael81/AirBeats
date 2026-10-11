@@ -84,6 +84,7 @@ fun NavGraphBuilder.navigationBuilder(
                             HomeScreenStyle.SPOTIFY -> SpotifyHomeScreen(navController = navController)
                             HomeScreenStyle.APPLE -> com.darkxvenom.airbeats.ui.screens.apple.AppleHomeScreen(navController = navController)
                             HomeScreenStyle.NEW_CLASSIC -> NewClassicHomeScreen(navController = navController, onSearchClick = onSearchClick)
+                            HomeScreenStyle.BETTER -> BetterHomeScreen(navController = navController, onSearchClick = onSearchClick)
                             HomeScreenStyle.MATERIAL -> com.darkxvenom.airbeats.ui.screens.material.MaterialHomeScreen(navController = navController, onSearchClick = onSearchClick)
                             else -> HomeScreen(navController = navController, onSearchClick = onSearchClick)
                         }
@@ -135,6 +136,8 @@ fun NavGraphBuilder.navigationBuilder(
                 com.darkxvenom.airbeats.ui.screens.apple.AppleHomeScreen(navController = navController)
             } else if (homeScreenStyle == HomeScreenStyle.NEW_CLASSIC) {
                 NewClassicHomeScreen(navController = navController, onSearchClick = onSearchClick)
+            } else if (homeScreenStyle == HomeScreenStyle.BETTER) {
+                BetterHomeScreen(navController = navController, onSearchClick = onSearchClick)
             } else if (homeScreenStyle == HomeScreenStyle.MATERIAL) {
                 com.darkxvenom.airbeats.ui.screens.material.MaterialHomeScreen(navController = navController, onSearchClick = onSearchClick)
             } else {
