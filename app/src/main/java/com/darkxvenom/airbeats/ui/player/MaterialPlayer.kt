@@ -315,12 +315,6 @@ fun MaterialPlayer(
         }
     }
 
-    DisposableEffect(parsedLyrics) {
-        LyricsTranslationHelper.registerLyrics(parsedLyrics)
-        onDispose {
-            LyricsTranslationHelper.unregisterLyrics(parsedLyrics)
-        }
-    }
 
     LaunchedEffect(parsedLyrics, mediaMetadata?.id, targetLanguage, currentTranslationLang, translationVersion, autoTranslate) {
         val songId = mediaMetadata?.id ?: return@LaunchedEffect

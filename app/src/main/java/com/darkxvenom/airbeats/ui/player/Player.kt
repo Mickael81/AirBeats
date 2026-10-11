@@ -480,7 +480,7 @@ fun BottomSheetPlayer(
 
     LaunchedEffect(playerScreenStyle, mediaMetadata?.id, currentLyrics) {
         val metadata = mediaMetadata
-        if ((playerScreenStyle != PlayerScreenStyle.SPOTIFY && playerScreenStyle != PlayerScreenStyle.GALAXY && playerScreenStyle != PlayerScreenStyle.BETTER) || metadata == null) {
+        if ((playerScreenStyle != PlayerScreenStyle.SPOTIFY && playerScreenStyle != PlayerScreenStyle.GALAXY) || metadata == null) {
             spotifyLyricsEntity = null
             return@LaunchedEffect
         }
@@ -2569,7 +2569,7 @@ fun BottomSheetPlayer(
                         showChoosePlaylistDialog = true
                     },
                     currentFormat = currentFormat,
-                    currentLyrics = (spotifyLyricsEntity ?: currentLyrics),
+                    currentLyrics = currentLyrics,
                     modifier = Modifier
                         .fillMaxSize()
                         .nestedScroll(state.preUpPostDownNestedScrollConnection)
