@@ -113,6 +113,7 @@ import com.darkxvenom.airbeats.constants.TranslateModeKey
 import com.darkxvenom.airbeats.lyrics.LyricsTranslationHelper
 import com.darkxvenom.airbeats.db.entities.LyricsEntity.Companion.LYRICS_NOT_FOUND
 import com.darkxvenom.airbeats.lyrics.LyricsEntry
+import com.darkxvenom.airbeats.lyrics.AirBeatsLyricsUtils
 import com.darkxvenom.airbeats.lyrics.AirBeatsLyricsUtils.findCurrentLineIndex
 import com.darkxvenom.airbeats.lyrics.AirBeatsLyricsUtils.isChinese
 import com.darkxvenom.airbeats.lyrics.AirBeatsLyricsUtils.isJapanese
@@ -140,7 +141,7 @@ import kotlin.math.abs
 // ──────────────────────────────────────────────────────────────────────
 
 /** Lead time offset for LRC-style line-synced lyrics (ms). */
-private const val LRC_LEAD_MS = 0L
+private const val LRC_LEAD_MS = 300L
 
 /** Lead time offset for TTML word-synced lyrics (ms). */
 private const val TTML_LEAD_MS = 0L
@@ -203,8 +204,11 @@ fun LyricsV2(
     val (replaceOriginalLyrics) = rememberPreference(ReplaceOriginalLyricsWithTranslationKey, defaultValue = false)
     val translationVersion by LyricsTranslationHelper.translationVersion.collectAsState()
 
-    // ── Text colour: pure white in all themes ──
-    val textColor = Color.White
+    // ── Text colour derived from background style ──
+    val textColor = if (playerBackground == PlayerBackgroundStyle.DEFAULT)
+        MaterialTheme.colorScheme.onBackground
+    else
+        Color.White
 
     val inactiveAlpha = 0.35f
 
@@ -327,7 +331,10 @@ fun LyricsV2(
             val sliderPos = sliderPositionProvider()
             val pos = sliderPos ?: player.currentPosition
 
-            currentPositionMs = pos + leadMs
+            // Add a visual tuning offset so animations feel instantly responsive and perfectly land on beat
+            val visualTuningOffsetMs = 150L
+            currentPositionMs = pos + leadMs + visualTuningOffsetMs
+
             currentLineIndex = findCurrentLineIndex(entriesWithWords, currentPositionMs, 0L)
             delay(16L) // ~60fps polling
         }

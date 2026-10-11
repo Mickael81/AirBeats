@@ -188,7 +188,7 @@ object AirBeatsLyricsUtils {
     fun findCurrentLineIndex(
         lines: List<LyricsEntry>,
         position: Long,
-        leadMs: Long = 0L,
+        leadMs: Long = 300L,
     ): Int {
         if (lines.isEmpty()) return -1
 
@@ -200,7 +200,7 @@ object AirBeatsLyricsUtils {
             val mid = (low + high).ushr(1)
             val midTime = lines[mid].time
 
-            if (midTime <= target) {
+            if (midTime < target) {
                 low = mid + 1
             } else {
                 high = mid - 1
