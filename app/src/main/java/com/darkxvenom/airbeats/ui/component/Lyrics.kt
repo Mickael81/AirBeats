@@ -409,31 +409,29 @@ fun Lyrics(
         val songId = currentSongId ?: return@LaunchedEffect
         if (lines.isEmpty()) return@LaunchedEffect
 
-        if (autoTranslate) {
-            val hasLoaded = LyricsTranslationHelper.loadTranslationsFromCache(
-                lyrics = lines,
-                context = context,
-                songId = songId,
-                targetLanguageCode = targetLanguage
-            )
+        val hasLoaded = LyricsTranslationHelper.loadTranslationsForSong(
+            lyrics = lines,
+            context = context,
+            songId = songId,
+            preferredLanguageCode = targetLanguage
+        )
 
-            if (!hasLoaded && !LyricsTranslationHelper.isTranslating()) {
-                val key = if (aiProvider == "DeepL") deeplApiKey else openRouterApiKey
-                if (key.isNotBlank()) {
-                    LyricsTranslationHelper.translateLyrics(
-                        lyrics = lines,
-                        targetLanguageCode = targetLanguage,
-                        apiKey = key,
-                        baseUrl = openRouterBaseUrl,
-                        model = openRouterModel,
-                        mode = translateMode,
-                        customPrompt = customPrompt.takeIf { it.isNotBlank() },
-                        provider = aiProvider,
-                        context = context,
-                        songId = songId,
-                        scope = scope
-                    )
-                }
+        if (!hasLoaded && autoTranslate && !LyricsTranslationHelper.isTranslating()) {
+            val key = if (aiProvider == "DeepL") deeplApiKey else openRouterApiKey
+            if (key.isNotBlank()) {
+                LyricsTranslationHelper.translateLyrics(
+                    lyrics = lines,
+                    targetLanguageCode = targetLanguage,
+                    apiKey = key,
+                    baseUrl = openRouterBaseUrl,
+                    model = openRouterModel,
+                    mode = translateMode,
+                    customPrompt = customPrompt.takeIf { it.isNotBlank() },
+                    provider = aiProvider,
+                    context = context,
+                    songId = songId,
+                    scope = scope
+                )
             }
         }
     }
@@ -755,7 +753,16 @@ fun Lyrics(
                                     if (selectedIndices.isNotEmpty()) {
                                         val sortedIndices = selectedIndices.sorted()
                                         val selectedLyricsText = sortedIndices
-                                            .mapNotNull { lines.getOrNull(it)?.text }
+                                            .mapNotNull {
+                                                val entry = lines.getOrNull(it) ?: return@mapNotNull null
+                                                val translated = entry.translatedTextFlow.value
+                                                if (replaceOriginalLyrics && !translated.isNullOrBlank()) {
+                                                    translated
+                                                } else {
+                                                    entry.text
+                                                }
+                                            }
+                                            .filter { it.isNotBlank() }
                                             .joinToString("\n")
 
                                         if (selectedLyricsText.isNotBlank()) {
@@ -1532,7 +1539,16 @@ fun Lyrics(
                                             if (selectedIndices.isNotEmpty()) {
                                                 val sortedIndices = selectedIndices.sorted()
                                                 val selectedLyricsText = sortedIndices
-                                                    .mapNotNull { lines.getOrNull(it)?.text }
+                                                    .mapNotNull {
+                                                        val entry = lines.getOrNull(it) ?: return@mapNotNull null
+                                                        val translated = entry.translatedTextFlow.value
+                                                        if (replaceOriginalLyrics && !translated.isNullOrBlank()) {
+                                                            translated
+                                                        } else {
+                                                            entry.text
+                                                        }
+                                                    }
+                                                    .filter { it.isNotBlank() }
                                                     .joinToString("\n")
 
                                                 if (selectedLyricsText.isNotBlank()) {

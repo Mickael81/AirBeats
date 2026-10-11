@@ -114,6 +114,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.darkxvenom.airbeats.R
 import com.darkxvenom.airbeats.constants.AutoTranslateKey
+import com.darkxvenom.airbeats.constants.ReplaceOriginalLyricsWithTranslationKey
 import com.darkxvenom.airbeats.constants.TranslateLanguageKey
 import com.darkxvenom.airbeats.db.entities.FormatEntity
 import com.darkxvenom.airbeats.db.entities.LyricsEntity
@@ -222,6 +223,21 @@ fun BetterPlayerContent(
                 entry.copy(words = words)
             }
         }
+    }
+
+    val (replaceOriginalLyrics) = rememberPreference(ReplaceOriginalLyricsWithTranslationKey, defaultValue = false)
+    val (targetLanguage) = rememberPreference(TranslateLanguageKey, defaultValue = "hi-Latn")
+    val translationVersion by LyricsTranslationHelper.translationVersion.collectAsState()
+
+    LaunchedEffect(parsedLyrics, mediaMetadata.id, targetLanguage, translationVersion) {
+        val songId = mediaMetadata.id
+        if (parsedLyrics.isEmpty()) return@LaunchedEffect
+        LyricsTranslationHelper.loadTranslationsForSong(
+            lyrics = parsedLyrics,
+            context = context,
+            songId = songId,
+            preferredLanguageCode = targetLanguage
+        )
     }
 
     // The two-tone contract: field + accent
@@ -433,6 +449,7 @@ fun BetterPlayerContent(
             position = position,
             accent = accent,
             onLyricsClick = onLyricsClick,
+            replaceOriginalLyrics = replaceOriginalLyrics,
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -1047,6 +1064,7 @@ private fun BetterPlayerLyricsRow(
     accent: Color,
     onLyricsClick: () -> Unit,
     modifier: Modifier = Modifier,
+    replaceOriginalLyrics: Boolean = false,
 ) {
     if (parsedLyrics.isEmpty()) {
         Row(
@@ -1103,12 +1121,16 @@ private fun BetterPlayerLyricsRow(
     }
 
     val activeEntry = parsedLyrics.getOrNull(activeLineIndex)
+    val fallbackFlow = remember { MutableStateFlow<String?>(null) }
+    val activeTranslatedText by (activeEntry?.translatedTextFlow ?: fallbackFlow).collectAsState()
+    val showDirectTranslation = replaceOriginalLyrics && !activeTranslatedText.isNullOrBlank()
 
-    val currentLineData = remember(activeLineIndex, activeEntry) {
+    val currentLineData = remember(activeLineIndex, activeEntry, activeTranslatedText, showDirectTranslation) {
+        val textToDisplay = if (showDirectTranslation) activeTranslatedText else activeEntry?.text
         LyricsLineData(
             time = activeEntry?.time ?: -1L,
-            text = activeEntry?.text,
-            words = activeEntry?.words,
+            text = textToDisplay,
+            words = if (showDirectTranslation) null else activeEntry?.words,
         )
     }
 

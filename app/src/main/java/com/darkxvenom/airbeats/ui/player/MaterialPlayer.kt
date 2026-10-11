@@ -320,39 +320,12 @@ fun MaterialPlayer(
         val songId = mediaMetadata?.id ?: return@LaunchedEffect
         if (parsedLyrics.isEmpty()) return@LaunchedEffect
 
-        if (autoTranslate) {
-            val activeLang = currentTranslationLang.ifBlank { targetLanguage }
-            var loaded = LyricsTranslationHelper.loadTranslationsFromCache(
-                lyrics = parsedLyrics,
-                context = context,
-                songId = songId,
-                targetLanguageCode = activeLang
-            )
-            if (!loaded && activeLang != targetLanguage) {
-                loaded = LyricsTranslationHelper.loadTranslationsFromCache(
-                    lyrics = parsedLyrics,
-                    context = context,
-                    songId = songId,
-                    targetLanguageCode = targetLanguage
-                )
-            }
-            if (!loaded) {
-                val dir = File(context.filesDir, "lyrics_translations")
-                val safeSongId = songId.replace(Regex("[^a-zA-Z0-9_-]"), "_")
-                val cachedFile = dir.listFiles { _, name -> name.startsWith("${safeSongId}_") && name.endsWith(".json") }?.firstOrNull()
-                if (cachedFile != null) {
-                    val foundLang = cachedFile.name.removePrefix("${safeSongId}_").removeSuffix(".json")
-                    if (foundLang.isNotBlank()) {
-                        LyricsTranslationHelper.loadTranslationsFromCache(
-                            lyrics = parsedLyrics,
-                            context = context,
-                            songId = songId,
-                            targetLanguageCode = foundLang
-                        )
-                    }
-                }
-            }
-        }
+        LyricsTranslationHelper.loadTranslationsForSong(
+            lyrics = parsedLyrics,
+            context = context,
+            songId = songId,
+            preferredLanguageCode = targetLanguage
+        )
     }
 
     val activeEntry = remember(parsedLyrics, position) {

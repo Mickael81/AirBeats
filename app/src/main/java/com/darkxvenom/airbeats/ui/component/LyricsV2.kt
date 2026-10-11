@@ -286,32 +286,30 @@ fun LyricsV2(
         val songId = mediaMetadata?.id ?: return@LaunchedEffect
         if (entriesWithWords.isEmpty()) return@LaunchedEffect
 
-        if (autoTranslate) {
-            val hasLoaded = LyricsTranslationHelper.loadTranslationsFromCache(
-                lyrics = entriesWithWords,
-                context = context,
-                songId = songId,
-                targetLanguageCode = targetLanguage
-            )
+        val hasLoaded = LyricsTranslationHelper.loadTranslationsForSong(
+            lyrics = entriesWithWords,
+            context = context,
+            songId = songId,
+            preferredLanguageCode = targetLanguage
+        )
 
-            // Auto-translate if enabled and not already translated or translating
-            if (!hasLoaded && !LyricsTranslationHelper.isTranslating()) {
-                val key = if (aiProvider == "DeepL") deeplApiKey else openRouterApiKey
-                if (key.isNotBlank()) {
-                    LyricsTranslationHelper.translateLyrics(
-                        lyrics = entriesWithWords,
-                        targetLanguageCode = targetLanguage,
-                        apiKey = key,
-                        baseUrl = openRouterBaseUrl,
-                        model = openRouterModel,
-                        mode = translateMode,
-                        customPrompt = customPrompt.takeIf { it.isNotBlank() },
-                        provider = aiProvider,
-                        context = context,
-                        songId = songId,
-                        scope = scope
-                    )
-                }
+        // Auto-translate if enabled and not already translated or translating
+        if (!hasLoaded && autoTranslate && !LyricsTranslationHelper.isTranslating()) {
+            val key = if (aiProvider == "DeepL") deeplApiKey else openRouterApiKey
+            if (key.isNotBlank()) {
+                LyricsTranslationHelper.translateLyrics(
+                    lyrics = entriesWithWords,
+                    targetLanguageCode = targetLanguage,
+                    apiKey = key,
+                    baseUrl = openRouterBaseUrl,
+                    model = openRouterModel,
+                    mode = translateMode,
+                    customPrompt = customPrompt.takeIf { it.isNotBlank() },
+                    provider = aiProvider,
+                    context = context,
+                    songId = songId,
+                    scope = scope
+                )
             }
         }
     }
@@ -770,7 +768,16 @@ fun LyricsV2(
                                     if (selectedIndices.isNotEmpty()) {
                                         val sortedIndices = selectedIndices.sorted()
                                         val selectedLyricsText = sortedIndices
-                                            .mapNotNull { entriesWithWords.getOrNull(it)?.text }
+                                            .mapNotNull {
+                                                val entry = entriesWithWords.getOrNull(it) ?: return@mapNotNull null
+                                                val translated = entry.translatedTextFlow.value
+                                                if (replaceOriginalLyrics && !translated.isNullOrBlank()) {
+                                                    translated
+                                                } else {
+                                                    entry.text
+                                                }
+                                            }
+                                            .filter { it.isNotBlank() }
                                             .joinToString("\n")
 
                                         if (selectedLyricsText.isNotBlank()) {
