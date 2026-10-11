@@ -119,6 +119,7 @@ import com.darkxvenom.airbeats.constants.TranslateLanguageKey
 import com.darkxvenom.airbeats.db.entities.FormatEntity
 import com.darkxvenom.airbeats.db.entities.LyricsEntity
 import com.darkxvenom.airbeats.extensions.togglePlayPause
+import com.darkxvenom.airbeats.lyrics.AirBeatsLyricsUtils
 import com.darkxvenom.airbeats.lyrics.LyricsTranslationHelper
 import com.darkxvenom.airbeats.lyrics.WordTimestamp
 import com.darkxvenom.airbeats.models.MediaMetadata
@@ -197,30 +198,8 @@ fun BetterPlayerContent(
                 } else {
                     4000L
                 }
-                val lineStartSec = entry.time / 1000.0
-                val tokens = entry.text.split(Regex("\\s+")).filter { it.isNotBlank() }
-                if (tokens.isEmpty()) return@mapIndexed entry
-
-                val totalChars = tokens.sumOf { it.length }.coerceAtLeast(1)
-                val words = mutableListOf<WordTimestamp>()
-                var currentOffsetMs = 0.0
-
-                tokens.forEachIndexed { wordIdx, token ->
-                    val weight = token.length.toDouble() / totalChars
-                    val wordDurMs = lineDurationMs * weight
-                    val wordStartSec = lineStartSec + (currentOffsetMs / 1000.0)
-                    val wordEndSec = wordStartSec + (wordDurMs / 1000.0)
-                    val wordText = if (wordIdx < tokens.lastIndex) "$token " else token
-                    words.add(
-                        WordTimestamp(
-                            text = wordText,
-                            startTime = wordStartSec,
-                            endTime = wordEndSec,
-                        )
-                    )
-                    currentOffsetMs += wordDurMs
-                }
-                entry.copy(words = words)
+                val words = AirBeatsLyricsUtils.synthesizeWordTimestamps(entry.text, entry.time, lineDurationMs)
+                if (words.isNotEmpty()) entry.copy(words = words) else entry
             }
         }
     }
@@ -1127,10 +1106,29 @@ private fun BetterPlayerLyricsRow(
 
     val currentLineData = remember(activeLineIndex, activeEntry, activeTranslatedText, showDirectTranslation) {
         val textToDisplay = if (showDirectTranslation) activeTranslatedText else activeEntry?.text
+        val wordsToDisplay = if (showDirectTranslation && !activeTranslatedText.isNullOrBlank() && activeEntry != null && activeEntry.time >= 0) {
+            val lineStartMs = if (!activeEntry.words.isNullOrEmpty()) {
+                (activeEntry.words.first().startTime * 1000.0).toLong().coerceAtLeast(activeEntry.time)
+            } else {
+                activeEntry.time
+            }
+            val lineDurationMs = if (!activeEntry.words.isNullOrEmpty()) {
+                val endMs = (activeEntry.words.last().endTime * 1000.0).toLong()
+                if (endMs > lineStartMs) (endMs - lineStartMs).coerceIn(800L, 12000L) else 4000L
+            } else {
+                val nextEntry = parsedLyrics.getOrNull(activeLineIndex + 1)
+                val nextTime = nextEntry?.time ?: (activeEntry.time + 4000L)
+                if (nextTime > lineStartMs) (nextTime - lineStartMs).coerceIn(800L, 10000L) else 4000L
+            }
+            AirBeatsLyricsUtils.synthesizeWordTimestamps(activeTranslatedText!!, lineStartMs, lineDurationMs)
+        } else {
+            activeEntry?.words
+        }
+
         LyricsLineData(
             time = activeEntry?.time ?: -1L,
             text = textToDisplay,
-            words = if (showDirectTranslation) null else activeEntry?.words,
+            words = wordsToDisplay,
         )
     }
 

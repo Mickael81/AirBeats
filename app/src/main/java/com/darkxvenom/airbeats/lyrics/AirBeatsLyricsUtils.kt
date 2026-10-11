@@ -414,4 +414,81 @@ object AirBeatsLyricsUtils {
         // The threshold (e.g., 0.1) can be adjusted based on desired sensitivity.
         return cjkCharCount > 0 && (hiraganaKatakanaCount.toDouble() / text.length.toDouble()) < 0.1
     }
+
+    /**
+     * Synthesizes word timestamps for text lines lacking word sync (e.g., translated lyrics or plain LRC lines).
+     * Distributes words proportionally across durationMs, with special grouping support for CJK scripts.
+     */
+    fun synthesizeWordTimestamps(
+        text: String,
+        startTimeMs: Long,
+        durationMs: Long,
+    ): List<WordTimestamp> {
+        if (text.isBlank() || startTimeMs < 0) return emptyList()
+        val lineStartSec = startTimeMs / 1000.0
+        val isCjkText = isJapanese(text) || isChinese(text) || isKorean(text)
+        val tokens = if (isCjkText) {
+            val chars = mutableListOf<String>()
+            val currentWord = StringBuilder()
+            text.forEach { char ->
+                if (char.isWhitespace()) {
+                    if (currentWord.isNotEmpty()) {
+                        chars.add(currentWord.toString())
+                        currentWord.clear()
+                    }
+                    chars.add(char.toString())
+                } else if (isJapanese(char.toString()) || isChinese(char.toString()) || isKorean(char.toString())) {
+                    if (currentWord.isNotEmpty()) {
+                        chars.add(currentWord.toString())
+                        currentWord.clear()
+                    }
+                    chars.add(char.toString())
+                } else {
+                    currentWord.append(char)
+                }
+            }
+            if (currentWord.isNotEmpty()) {
+                chars.add(currentWord.toString())
+            }
+
+            // Group spaces onto the preceding word
+            val groupedTokens = mutableListOf<String>()
+            chars.forEachIndexed { _, c ->
+                if (c.isBlank()) {
+                    if (groupedTokens.isNotEmpty()) {
+                        groupedTokens[groupedTokens.lastIndex] = groupedTokens.last() + c
+                    }
+                } else {
+                    groupedTokens.add(c)
+                }
+            }
+            groupedTokens
+        } else {
+            text.split(Regex("\\s+")).filter { it.isNotBlank() }
+        }
+        if (tokens.isEmpty()) return emptyList()
+
+        // Weight each token by character count for proportional distribution
+        val totalChars = tokens.sumOf { it.length }.coerceAtLeast(1)
+        val words = mutableListOf<WordTimestamp>()
+        var currentOffsetMs = 0.0
+
+        tokens.forEachIndexed { wordIdx, token ->
+            val weight = token.length.toDouble() / totalChars
+            val wordDurMs = durationMs * weight
+            val wordStartSec = lineStartSec + (currentOffsetMs / 1000.0)
+            val wordEndSec = wordStartSec + (wordDurMs / 1000.0)
+
+            val wordText = if (wordIdx < tokens.lastIndex && !isCjkText) "$token " else token
+            words.add(
+                WordTimestamp(
+                    text = wordText,
+                    startTime = wordStartSec,
+                    endTime = wordEndSec,
+                )
+            )
+            currentOffsetMs += wordDurMs
+        }
+        return words
+    }
 }
